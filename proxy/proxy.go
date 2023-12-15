@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"errors"
-	"github.com/gorilla/mux"
 	"io"
 	"log"
 	"net"
@@ -13,7 +12,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"../rpc"
+	"github.com/gorilla/mux"
+
+	"github.com/aquachain/aquachain-proxy/rpc"
 )
 
 type ProxyServer struct {

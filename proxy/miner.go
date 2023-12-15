@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"../util"
 	"log"
 	"math/big"
 	"strconv"
@@ -10,11 +9,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethereum/ethash"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/aquachain/aquachain-proxy/util"
+	"gitlab.com/aquachain/aquachain/common"
+	"gitlab.com/aquachain/aquachain/consensus/lightvalid"
 )
 
-var hasher = ethash.New()
+var hasher = lightvalid.New()
 
 type Miner struct {
 	sync.RWMutex

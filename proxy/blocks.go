@@ -1,13 +1,15 @@
 package proxy
 
 import (
-	"../util"
 	"log"
 	"math/big"
 	"strconv"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/aquachain/aquachain-proxy/util"
+
+	"gitlab.com/aquachain/aquachain/common"
+	"gitlab.com/aquachain/aquachain/params"
 )
 
 const maxBacklog = 8
@@ -32,6 +34,10 @@ type Block struct {
 	nonce       uint64
 	mixDigest   common.Hash
 	number      uint64
+}
+
+func (b Block) Version() params.HeaderVersion {
+	return params.HeaderVersion(b.number)
 }
 
 func (b Block) Difficulty() *big.Int     { return b.difficulty }

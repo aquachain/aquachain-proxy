@@ -2,7 +2,7 @@
 	"threads": 2,
 
 	"proxy": {
-		"listen": "0.0.0.0:8546",
+		"listen": "0.0.0.0:8543",
 		"clientTimeout": "3m",
 		"blockRefreshInterval": "100ms",
 		"hashrateWindow": "15m",
@@ -14,15 +14,15 @@
 	"frontend": {
 		"listen": "0.0.0.0:8080",
 		"login": "admin",
-		"password": ""
+		"password": "changeme"
 	},
 
 	"upstreamCheckInterval": "5s",
 	"upstream": [
 		{
 			"pool": true,
-			"name": "EuroHash.net",
-			"url": "http://eth-eu.eurohash.net:8888/miner/0xb85150eb365e7df0941f0cf08235f987ba91506a/proxy",
+			"name": "Pool9",
+			"url": "http://pool9.aquachain.xyz:8888/YOUR_WALLET_HERE/pool",
 			"timeout": "10s"
 		},
 		{
