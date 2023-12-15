@@ -37,7 +37,7 @@ type Block struct {
 }
 
 func (b Block) Version() params.HeaderVersion {
-	return params.HeaderVersion(b.number)
+	return params.MainnetChainConfig.GetBlockVersion(big.NewInt(int64(b.number)))
 }
 
 func (b Block) Difficulty() *big.Int     { return b.difficulty }
