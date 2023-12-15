@@ -175,14 +175,14 @@ func (cs *Session) handleMessage(s *ProxyServer, r *http.Request, req *JSONRpcRe
 
 	// Handle RPC methods
 	switch req.Method {
-	case "eth_getWork":
+	case "eth_getWork", "aqua_getWork":
 		reply, errReply := s.handleGetWorkRPC(cs, vars["diff"], vars["id"])
 		if errReply != nil {
 			cs.sendError(req.Id, errReply)
 			break
 		}
 		cs.sendResult(req.Id, &reply)
-	case "eth_submitWork":
+	case "eth_submitWork", "aqua_submitWork":
 		var params []string
 		err := json.Unmarshal(*req.Params, &params)
 		if err != nil {
@@ -195,7 +195,7 @@ func (cs *Session) handleMessage(s *ProxyServer, r *http.Request, req *JSONRpcRe
 			break
 		}
 		cs.sendResult(req.Id, &reply)
-	case "eth_submitHashrate":
+	case "eth_submitHashrate", "aqua_submitHashrate": // doesnt do anything
 		reply := true
 		if s.config.Proxy.SubmitHashrate {
 			reply = s.handleSubmitHashrate(cs, req)
