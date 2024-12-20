@@ -14,7 +14,7 @@ func (s *ProxyServer) handleGetWorkRPC(cs *Session, diff, id string) (reply []st
 	}
 	targetHex := t.Target
 
-	if !s.rpc().Pool {
+	if diff != "" && diff != "0" && diff != "1" && !s.rpc().Pool {
 		minerDifficulty, err := strconv.ParseFloat(diff, 64)
 		if err != nil {
 			log.Printf("Invalid difficulty %v from %v@%v ", diff, id, cs.ip)

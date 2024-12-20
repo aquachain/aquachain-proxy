@@ -34,7 +34,7 @@ func (s *ProxyServer) StatsIndex(w http.ResponseWriter, r *http.Request) {
 	}
 	stats["upstreams"] = upstreams
 	stats["current"] = convertUpstream(s.rpc())
-	stats["url"] = "http://" + s.config.Proxy.Listen + "/miner/<diff>/<id>"
+	stats["url"] = "http://" + s.config.Proxy.Listen
 
 	t := s.currentBlockTemplate()
 	stats["height"] = t.Height

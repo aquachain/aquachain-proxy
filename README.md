@@ -1,6 +1,6 @@
-# ether-proxy
+# aquachain-proxy
 
-Ethereum mining proxy with web-interface.
+Aquachain mining proxy with web-interface.
 
 **Proxy feature list:**
 
@@ -9,96 +9,74 @@ Ethereum mining proxy with web-interface.
 * Easy detection of sick rigs
 * Daemon failover list
 
-![Demo](https://raw.githubusercontent.com/sammy007/ether-proxy/master/proxy.png)
+![Demo](https://raw.githubusercontent.com/aquachain/aquachain-proxy/master/docs/screenshot.png)
 
-### Building on Linux
+### Installation
 
-Dependencies:
-
-  * go >= 1.4
-  * geth
-
-Export GOPATH:
-
-    export GOPATH=$HOME/go
-
-Install required packages:
-
-    go get github.com/ethereum/ethash
-    go get github.com/ethereum/go-ethereum/common
-    go get github.com/goji/httpauth
-    go get github.com/gorilla/mux
-    go get github.com/yvasiyarov/gorelic
-
-Compile:
-
-    go build -o ether-proxy main.go
-
-### Building on Windows
-
-Follow [this wiki paragraph](https://github.com/ethereum/go-ethereum/wiki/Installation-instructions-for-Windows#building-from-source) in order to prepare your environment.
-Install required packages (look at Linux install guide above). Then compile:
-
-    go build -o ether-proxy.exe main.go
-
-### Building on Mac OS X
-
-If you didn't install [Brew](http://brew.sh/), do it. Then install Golang:
-
-    brew install go
-
-And follow Linux installation instructions because they are the same for OS X.
+  1. Compile (eg: 'make' or 'make all' for cross-compilation)
+  2. Copy aquachain-proxy to /usr/local/bin/
+  3. Copy aquaproxy.example.json to /etc/aquaproxy.json, edit the YOUR_ADDRESS_HERE field (see Configuration below)
+  4. Copy docs/aquaproxy.service to /etc/systemd/system/
+  5. Run 'systemctl enable aquaproxy' to start on boot
+  6. Run 'systemctl start aquaproxy' to start now
+  7. Optional: Customize a frontend just by creating a 'www' directory in the working directory. Copy it from the repository's 'www' directory.
 
 ### Configuration
 
 Configuration is self-describing, just copy *config.example.json* to *config.json* and specify endpoint URL and upstream URLs.
 
+Or, use '-mkcfg' flag to create the file with defaults. (still need to change upstream)
+
 #### Example upstream section
 
-```javascript
-"upstream": [
-  {
-    "pool": true,
-    "name": "EuroHash.net",
-    "url": "http://eth-eu.eurohash.net:8888/miner/0xb85150eb365e7df0941f0cf08235f987ba91506a/proxy",
-    "timeout": "10s"
-  },
-  {
-    "name": "backup-geth",
-    "url": "http://127.0.0.1:8545",
-    "timeout": "10s"
-  }
-],
+```json
+{
+  "upstream": [
+    {
+      "pool": true,
+      "name": "EuroHash.net",
+      "url": "http://eth-eu.eurohash.net:8888/miner/0xb85150eb365e7df0941f0cf08235f987ba91506a/proxy",
+      "timeout": "10s"
+    },
+    {
+      "name": "backup-geth",
+      "url": "http://127.0.0.1:8545",
+      "timeout": "10s"
+    }
+  ]
+}
 ```
 
-In this example we specified [EuroHash.net](https://eurohash.net) mining pool as main mining target and a local geth node as backup for solo.
-
-With <code>"submitHashrate": true|false</code> proxy will forward <code>eth_submitHashrate</code> requests to upstream.
+In this example we specified a mining pool as main mining target and a local geth node as backup for solo.
 
 #### Running
 
-    ./ether-proxy config.json
+With no arguments, aquachain-proxy will look for a aquaproxy.json in the working directory, /etc/aquaproxy.json, and /opt/aqua/aquaproxy.json
 
-#### Mining
+    ./aquachain-proxy
 
-    ethminer -F http://x.x.x.x:8546/miner/5/gpu-rig -G
-    ethminer -F http://x.x.x.x:8546/miner/0.1/cpu-rig -C
+Specify a config file with the -cfg flag
+
+    ./aquachain-proxy -cfg /etc/aquaproxy.json
+
+If you have a 'www' directory but still want to serve from embedded filesystem,
+
+    ./aquachain-proxy -e -cfg /etc/aquaproxy.json
+
+#### Mining software configuration
+
+    aquaminer-gpu -F http://x.x.x.x:8546/rig1 
+    aquaminer-gpu -F http://x.x.x.x:8546/0.1/rig2 
+    aquaminer-gpu -F http://x.x.x.x:8546/0x...1234/rig3 
 
 ### Pools that work with this proxy
 
-* [EuroHash.net](https://eurohash.net) EU Ethereum mining pool
-* [SuprNova.cc](https://eth.suprnova.cc) SuprNova ETH Pool
+* [See Explorer](https://aquachain.github.io/explorer/#/pool) for a list of active pools. (to add a pool, submit PR to [aquachain.github.io](https://github.com/aquachain/aquachain.github.io/blob/master/public/pools.json) source)
 
-Pool owners, apply for listing here. PM me for implementation details.
 
-### TODO
 
-**Currently it's solo-only solution.**
 
-* Report block numbers
-* Report luck per rig
-* Maybe add more stats
-* Maybe add charts
+## Below is from [fork origin's README.md](https://github.com/sammy007/ether-proxy):
 
 ### Donations
 

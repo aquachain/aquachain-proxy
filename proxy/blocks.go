@@ -82,7 +82,7 @@ func (s *ProxyServer) fetchBlockTemplate() {
 		}
 	}
 	s.blockTemplate.Store(&newTemplate)
-	log.Printf("New block to mine on %s at height %d / %s", rpc.Name, height, reply[0][0:10])
+	log.Printf("New block to mine on %s at height %d / hash(%q) difficulty %2.1f MH", rpc.Name, height, reply[0][0:20], float64(diff.Uint64()/100000)/10)
 }
 
 func (s *ProxyServer) fetchPendingBlock() (uint64, *big.Int, error) {

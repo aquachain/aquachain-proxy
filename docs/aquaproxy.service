@@ -1,0 +1,15 @@
+[Unit]
+Description=Aquachain Proxy
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/aquachain-proxy
+Restart=on
+User=aqua
+Group=aqua
+StandardError=file:/var/log/aquaproxy.log
+WorkingDirectory=/opt/aquaproxy
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target

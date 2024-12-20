@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"sync"
@@ -38,16 +38,20 @@ type JSONRpcResp struct {
 	Error  map[string]interface{} `json:"error"`
 }
 
-func NewRPCClient(name, rawUrl, timeout string, pool bool) (*RPCClient, error) {
+func NewRPCClient(name, rawUrl, timeout string, pool bool, httpclient *http.Client) (*RPCClient, error) {
 	url, err := url.Parse(rawUrl)
 	if err != nil {
 		return nil, err
 	}
 	rpcClient := &RPCClient{Name: name, Url: url, Pool: pool}
-	timeoutIntv, _ := time.ParseDuration(timeout)
-	rpcClient.client = &http.Client{
-		Timeout: timeoutIntv,
+	timeoutIntv, err := time.ParseDuration(timeout)
+	if err != nil {
+		return nil, err
 	}
+	if httpclient == nil && http.DefaultClient.Timeout < timeoutIntv {
+		http.DefaultClient.Timeout = timeoutIntv
+	}
+	rpcClient.client = httpclient
 	return rpcClient, nil
 }
 
@@ -91,13 +95,19 @@ func (r *RPCClient) SubmitBlock(params []string) (bool, error) {
 		return false, errors.New(rpcResp.Error["message"].(string))
 	}
 	err = json.Unmarshal(*rpcResp.Result, &result)
+	if err != nil {
+		return false, err
+	}
 	if !result {
-		return false, errors.New("Block not accepted, result=false")
+		return false, errors.New("block not accepted, result=false")
 	}
 	return result, nil
 }
 
 func (r *RPCClient) SubmitHashrate(params interface{}) (bool, error) {
+	if true {
+		return true, nil
+	}
 	rpcResp, err := r.doPost(r.Url.String(), "eth_submitHashrate", params)
 	var result bool
 	if err != nil {
@@ -107,6 +117,9 @@ func (r *RPCClient) SubmitHashrate(params interface{}) (bool, error) {
 		return false, errors.New(rpcResp.Error["message"].(string))
 	}
 	err = json.Unmarshal(*rpcResp.Result, &result)
+	if err != nil {
+		return false, err
+	}
 	if !result {
 		return false, errors.New("Request failure")
 	}
@@ -117,19 +130,25 @@ func (r *RPCClient) doPost(url, method string, params interface{}) (JSONRpcResp,
 	jsonReq := map[string]interface{}{"jsonrpc": "2.0", "id": 0, "method": method, "params": params}
 	data, _ := json.Marshal(jsonReq)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(data))
+	if err != nil {
+		return JSONRpcResp{}, err
+	}
 	req.Header.Set("Content-Length", (string)(len(data)))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
-	resp, err := r.client.Do(req)
+	client := r.client
+	if client == nil {
+		client = http.DefaultClient
+	}
+	resp, err := client.Do(req)
 	var rpcResp JSONRpcResp
-
 	if err != nil {
 		r.markSick()
 		return rpcResp, err
 	}
 	defer resp.Body.Close()
 
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 	err = json.Unmarshal(body, &rpcResp)
 
 	if rpcResp.Error != nil {

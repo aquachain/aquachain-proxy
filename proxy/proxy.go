@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -30,6 +31,8 @@ type ProxyServer struct {
 	blockStats      map[int64]float64
 	luckWindow      int64
 	luckLargeWindow int64
+	Context         context.Context
+	Cancel          context.CancelCauseFunc
 }
 
 type Session struct {
@@ -41,18 +44,17 @@ const (
 	MaxReqSize = 1 * 1024
 )
 
-func NewEndpoint(cfg *Config) *ProxyServer {
+func NewEndpoint(cfg *Config) (*ProxyServer, error) {
 	proxy := &ProxyServer{config: cfg, blockStats: make(map[int64]float64)}
 
 	proxy.upstreams = make([]*rpc.RPCClient, len(cfg.Upstream))
 	for i, v := range cfg.Upstream {
-		client, err := rpc.NewRPCClient(v.Name, v.Url, v.Timeout, v.Pool)
+		client, err := rpc.NewRPCClient(v.Name, v.Url, v.Timeout, v.Pool, cfg.HttpClient)
 		if err != nil {
-			log.Fatal(err)
-		} else {
-			proxy.upstreams[i] = client
-			log.Printf("Upstream: %s => %s", v.Name, v.Url)
+			return nil, err
 		}
+		proxy.upstreams[i] = client
+		log.Printf("Upstream: %s => %s", v.Name, v.Url)
 	}
 	log.Printf("Default upstream: %s => %s", proxy.rpc().Name, proxy.rpc().Url)
 
@@ -78,28 +80,34 @@ func NewEndpoint(cfg *Config) *ProxyServer {
 
 	checkIntv, _ := time.ParseDuration(cfg.UpstreamCheckInterval)
 	checkTimer := time.NewTimer(checkIntv)
-
+	ctx, cancel := context.WithCancelCause(context.Background())
+	proxy.Context = ctx
+	proxy.Cancel = cancel
 	go func() {
-		for {
+		for proxy.Context.Err() == nil {
 			select {
+			case <-proxy.Context.Done():
 			case <-refreshTimer.C:
 				proxy.fetchBlockTemplate()
 				refreshTimer.Reset(refreshIntv)
 			}
 		}
+		log.Printf("no longer refreshing block template")
 	}()
 
 	go func() {
-		for {
+		for proxy.Context.Err() == nil {
 			select {
+			case <-proxy.Context.Done():
 			case <-checkTimer.C:
 				proxy.checkUpstreams()
 				checkTimer.Reset(checkIntv)
 			}
 		}
+		log.Printf("no longer checking upstreams")
 	}()
 
-	return proxy
+	return proxy, nil
 }
 
 func (s *ProxyServer) rpc() *rpc.RPCClient {
@@ -130,10 +138,13 @@ func (s *ProxyServer) checkUpstreams() {
 
 func (s *ProxyServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
-		s.writeError(w, 405, "rpc: POST method required, received "+r.Method)
+		s.writeError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
-	s.handleClient(w, r)
+	if err := s.handleClient(w, r); err != nil {
+		s.writeError(w, http.StatusBadRequest, "Bad request")
+		return
+	}
 }
 
 func (s *ProxyServer) handleClient(w http.ResponseWriter, r *http.Request) error {
@@ -146,7 +157,7 @@ func (s *ProxyServer) handleClient(w http.ResponseWriter, r *http.Request) error
 		data, isPrefix, err := connbuff.ReadLine()
 		if isPrefix {
 			log.Printf("Socket flood detected")
-			return errors.New("Socket flood")
+			return errors.New("socket flood")
 		} else if err == io.EOF {
 			break
 		}
@@ -172,11 +183,15 @@ func (cs *Session) handleMessage(s *ProxyServer, r *http.Request, req *JSONRpcRe
 	}
 
 	vars := mux.Vars(r)
+	diff := vars["diff"]
+	if diff == "" {
+		diff = "0"
+	}
 
 	// Handle RPC methods
 	switch req.Method {
 	case "eth_getWork", "aqua_getWork":
-		reply, errReply := s.handleGetWorkRPC(cs, vars["diff"], vars["id"])
+		reply, errReply := s.handleGetWorkRPC(cs, diff, vars["id"])
 		if errReply != nil {
 			cs.sendError(req.Id, errReply)
 			break
@@ -189,7 +204,7 @@ func (cs *Session) handleMessage(s *ProxyServer, r *http.Request, req *JSONRpcRe
 			log.Println("Unable to parse params")
 			break
 		}
-		reply, errReply := s.handleSubmitRPC(cs, vars["diff"], vars["id"], params)
+		reply, errReply := s.handleSubmitRPC(cs, diff, vars["id"], params)
 		if errReply != nil {
 			err = cs.sendError(req.Id, errReply)
 			break

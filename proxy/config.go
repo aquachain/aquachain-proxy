@@ -1,10 +1,13 @@
 package proxy
 
+import "net/http"
+
 type Config struct {
-	Proxy                 Proxy      `json:"proxy"`
-	Frontend              Frontend   `json:"frontend"`
-	Upstream              []Upstream `json:"upstream"`
-	UpstreamCheckInterval string     `json:"upstreamCheckInterval"`
+	HttpClient            *http.Client `json:"-"`
+	Proxy                 Proxy        `json:"proxy"`
+	Frontend              Frontend     `json:"frontend"`
+	Upstream              []Upstream   `json:"upstream"`
+	UpstreamCheckInterval string       `json:"upstreamCheckInterval"`
 
 	Threads int `json:"threads"`
 
@@ -25,9 +28,10 @@ type Proxy struct {
 }
 
 type Frontend struct {
-	Listen   string `json:"listen"`
-	Login    string `json:"login"`
-	Password string `json:"password"`
+	Listen     string `json:"listen"`
+	Login      string `json:"login"`
+	Password   string `json:"password"`
+	ForceEmbed bool   `json:"forceEmbed"`
 }
 
 type Upstream struct {
