@@ -1,7 +1,5 @@
 /* Fixes */
-.dl-horizontal dt {
-    white-space: normal;
-}
+
 
 /* Space out content a bit */
 body {
@@ -70,12 +68,16 @@ span.logo-3 {
   font-size: 21px;
 }
 
-/* Supporting marketing content */
+Supporting marketing content
 .marketing {
   margin: 40px 0;
 }
 .marketing p + h4 {
   margin-top: 28px;
+}
+
+tr.success td  {
+  background-color: #0f0f0f !important;
 }
 
 /* Responsive: Portrait tablets and up */

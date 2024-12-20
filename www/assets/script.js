@@ -13,7 +13,7 @@ $(function() {
 
 function refreshStats(template) {
 	$.getJSON("/stats", function(stats) {
-		$("#alert").addClass('hide');
+		$("#alertmsg").addClass('d-none');
 
 		// Sort miners by ID
 		if (stats.miners) {
@@ -27,7 +27,7 @@ function refreshStats(template) {
 		var html = template(stats);
 		$('#stats').html(html);
 	}).fail(function() {
-		$("#alert").removeClass('hide');
+		$("#alertmsg").removeClass('d-none');
 	});
 }
 
