@@ -1,0 +1,31 @@
+{
+ "proxy": {
+  "listen": "0.0.0.0:8888",
+  "clientTimeout": "3m",
+  "blockRefreshInterval": "1000ms",
+  "hashrateWindow": "15m",
+  "submitHashrate": false,
+  "luckWindow": "24h",
+  "largeLuckWindow": "72h"
+ },
+ "frontend": {
+  "listen": "0.0.0.0:8080",
+  "login": "admin",
+  "password": "changeme",
+  "forceEmbed": false
+ },
+ "upstream": [
+  {
+   "name": "Pool9",
+   "url": "http://pool9.aquachain.xyz:8888/YOUR_WALLET_HERE/aquapool",
+   "timeout": "10s",
+   "pool": true
+  }
+ ],
+ "upstreamCheckInterval": "5s",
+ "threads": 2,
+ "newrelicName": "MyEtherProxy",
+ "newrelicKey": "SECRET_KEY",
+ "newrelicVerbose": false,
+ "newrelicEnabled": false
+}
